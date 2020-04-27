@@ -26,8 +26,8 @@ unix系统中大多数文件IO只用到了5个函数，open， read， write， 
 ## open函数
 
 调用open函数可以打开或创建一个文件。
-#include <fcntl.h>
-int open(const char *pathname, int oflags, .../* mode_t mode */);
+    #include <fcntl.h>
+    int open(const char *pathname, int oflags, .../* mode_t mode */);
 返回值： success return fd， failed return -1；
 
 将第三个参数写为..., ISO C 用这种方法表明余下参数的数量以及其类型根据具体的调用会有所不同。
@@ -40,4 +40,3 @@ pathname是要打开或创建的文件的名字。oflags参数可用来说明此
 O_RDONLY 只读打开
 O_WRONLY 只写打开
 O_RDWR 读写打开
-  
