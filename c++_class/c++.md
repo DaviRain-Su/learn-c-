@@ -107,6 +107,10 @@ complex.h (guard)
         friend complex & __doapl (complex* , const complex&);
     };
 
+    ostream & operator << (ostream &os, const complex& x)
+    {
+        return os << '(' << real(x) << ',' << imag(x) << ')' ;
+    }
     #endif
 
 useage:
@@ -182,27 +186,31 @@ useage:
 
     这是就不能构造对象
 
-    class A{ // -----------------> Singleton 单体模式
+    class A{ // -----------------> Singleton 单例模式
         public:
         
-            static A& geyInstance();
+            static A& geyInstance(); // -----------> 注意static
             setup() { ... }
         private:
-            A();
-            A(const A& rhs);
+            A(); // ------------> 构造函数放在private区域
+            A(const A& rhs); 
             ...
     };
 
     A& A::getInstance() 
     {
-        static A a;
+        static A a; // --------------> 注意static
         return a;
     }
 
+
+    // 单例模式的使用方法
     A::getInstance().setup(); // call function
 
 ## const member fcuntion 
 
+
+    在函数的后面加const
 
     double real() const { return re; } // --------> const 表示不改变数据
     double imag() const { return im; }
@@ -213,4 +221,246 @@ useage:
         cout << c1.imag(); // if imag() is not const lable will be error 
     }
 
-            
+
+## pass by value Vs pass by reference (to const) ---> Reference 引用
+
+
+    template< typename T> 
+    class complex
+    {
+        public:
+            complex(T r = 0, T i = 0) // ------> pass by value 
+                : re(r), im (i)
+            {}
+
+            complex& operator += (const complex& ); // ------> pass by reference
+            T real() const { return re; } 
+            T imag() const { return im; } 
+        private:  
+            T re, im; 
+
+        friend complex & __doapl (complex* , const complex&); // ------> (para 1) pass by value , (para 2)pass by reference (const )
+    };
+
+    ostream & operator << (ostream &os, const complex& x) // ------> (1) pass by reference (这个会改变os), (para 2) pass by reference (const )
+    {
+        return os << '(' << real(x) << ',' << imag(x) << ')' ;
+    }
+
+## return by value Vs return by reference (to const)
+
+
+    template< typename T> 
+    class complex
+    {
+        public:
+            complex(T r = 0, T i = 0)  
+                : re(r), im (i)
+            {}
+
+            complex& operator += (const complex& ); // ---> return by reference
+            T real() const { return re; }  // ----> return by value 
+            T imag() const { return im; } 
+        private:  
+            T re, im; 
+
+        friend complex & __doapl (complex* , const complex&);  // ------> return by reference
+    };
+
+    ostream & operator << (ostream &os, const complex& x) // ------> return by reference
+    {
+        return os << '(' << real(x) << ',' << imag(x) << ')' ;
+    }   
+
+
+## friend 
+
+    template< typename T> 
+    class complex
+    {
+        public:
+            complex(T r = 0, T i = 0) 
+                : re(r), im (i)
+            {}
+
+            complex& operator += (const complex& ); 
+            T real() const { return re; } 
+            T imag() const { return im; } 
+        private:  
+            T re, im;  // ----------------->    外部不能随意取数据
+
+        friend complex & __doapl (complex* , const complex&);  // --------> 对这个函数是我的朋友可以访问我的私有成员
+    };
+
+    inline complex &
+    __doapl( complex * ths, const complex & r)
+    {
+        ths-> re += r.re;
+        rhs-> im += r.im;
+        return *this;
+    }
+
+    ostream & operator << (ostream &os, const complex& x) 
+    {
+        return os << '(' << real(x) << ',' << imag(x) << ')' ;
+    }
+
+## 相同class的各个object互为friend
+
+    class complex {
+        public:
+        complex( double r = 0, double i = 0)
+            : re(r), im(i)
+        {}
+
+        int func(const complex & param) // -------------
+        {
+            return param.re + param.im;
+        }
+        private:
+            double re, im;
+    };
+
+    {
+        complex c1(2, 1);
+        complex c2;
+
+        c2.func(c1);
+    }
+
+## class body 外部各种定义
+
+什么情况下可以 pass by reference
+什么情况下可以 return by reference
+
+
+    do assignment plus
+
+    inline complex& 
+    __doapl (complex* ths, const complex& r)
+    {
+        ths-> re += r.re; // 第一个参数将会被改变
+        ths-> im += r.im; // 第二个参数不会被改变
+        return *this;
+    }
+
+    inline complex &
+    complex::operator += (const complex& r)
+    {
+        return __doapl(this, r);
+    }
+
+     a += b;  // 可以传引用
+
+     c = a + b; // return by reference 是错误的 不可以传引用
+
+参数和返回的传递首先考虑传引用，考虑行不行呢，再进一步的区分。
+
+## 操作符重载   operator overloading (成员函数) this
+
+    inline complex& 
+    __doapl (complex* ths, const complex& r)
+    {
+        ths-> re += r.re; // 第一个参数将会被改变
+        ths-> im += r.im; // 第二个参数不会被改变
+        return *this;
+    }
+
+    inline complex &
+    complex::operator += (const complex& r)
+    {
+        return __doapl(this, r);
+    }
+
+
+    {
+        complex c1(2, 1);
+        complex c2(5);
+
+        c2 += c1;
+
+        c2(this) <----> c1(r)
+    }
+
+    inline complex& complex::operator += (this, const complex& r)
+    {
+        return __doapl(thism r);
+    }
+
+
+## return by reference 语法分析
+
+传递着无需知道接受者是以reference形式接受
+
+    inline complex& // ----> refenence 接收
+    __doapl (complex* ths, const complex& r)
+    {
+        ths-> re += r.re; // 第一个参数将会被改变
+        ths-> im += r.im; // 第二个参数不会被改变
+        return *this; // *******
+    }
+
+    inline complex & // ----> refenence 接收
+    complex::operator += (const complex& r)
+    {
+        return __doapl(this, r); 
+    }
+
+
+    {
+        complex c1(2, 1);
+        complex c2(5);
+
+        c2 += c1;
+    }
+
+## class body 之外各种定义
+
+    inline double imag(const complex& x)
+    {
+        return x.imag();
+    }
+
+    inline double real(const complex& x)
+    {
+        return x.real();
+    }
+
+## operator overloading (操作符重载 非成员函数) 无this
+
+为了应对client的三种可能用法， 这对应开发三个函数
+
+    inline complex 
+    operator + (const complex &x, const complex& y){
+        return compelx( real(x) + real(y), 
+                        imag(x) + imag(y));
+    }
+
+    inline complex operator + (const complex& x, double y)
+    {
+        return complex( real(x), imag(y));
+    }
+
+    inline complex operator + (double x, const complex & y)
+    {
+        return complex (x + real(y), imag(y));
+    }
+
+## temp object 临时对象  | typename();
+
+下面这些函数绝对不可以return by reference 
+因为， 返回的是 local object
+
+      inline complex 
+    operator + (const complex &x, const complex& y){
+        return compelx( real(x) + real(y), 
+                        imag(x) + imag(y));
+    }
+
+    inline complex operator + (const complex& x, double y)
+    {
+        return complex(real (x), imag(y)); // 创建的临时对象 typename()
+    }
+
+    inline complex operator + (double x, const complex & y);
+
