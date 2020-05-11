@@ -464,3 +464,21 @@ useage:
 
     inline complex operator + (double x, const complex & y);
 
+    inline complex
+    conj(const complex& x)
+    {
+        return complex( real(x), -imag(x));
+    }
+    
+    #include <iostream.h>
+
+    ostream& operator << (ostream& os, const complex& x)
+    {
+        return os << '(' << real(x) << ',' << imag(x) << ')';
+    }
+
+    {
+        complex c1(2, 1);
+        cout << conj(c1);
+        cout << c1 << conj(c1);
+    }
